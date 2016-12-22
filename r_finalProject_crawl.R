@@ -1,0 +1,224 @@
+---
+  title: "r_finalProject_crawl"
+output: html_notebooㄜ
+html_document:
+  toc: true
+toc_float: true
+---
+
+require(XML)
+require(xml2)
+require(rvest)
+require(dplyr)
+aa=NULL
+for(i in c(0:37)){
+  a=paste0("http://www.i-part.com.tw/search/query_online.php?f=all&s=F&page=",i)
+  aa<-rbind(aa,a)
+}
+cc=NULL
+for(i in c(0:63)){
+  c=paste0("http://www.i-part.com.tw/search/query_online.php?f=all&s=M&page=",i)
+  cc<-rbind(cc,c)
+}
+
+
+
+
+#個人網頁抓取
+
+new=NULL
+domain = "http://www.i-part.com.tw/"
+for(i in c(1:38)){
+  
+  b<-aa[i]
+  individual<-read_html(b)%>%html_nodes('td td td td a')
+  
+  
+  url = individual %>%html_attr('href')
+  url <- gsub(domain, "", url)
+  url = paste0(domain, url)
+  news = data.frame(url=url)
+  new=rbind(new,news)
+}
+new<-filter(new,url!="http://www.i-part.com.tw//unusual/unusual.php?t=7")
+new<-unique(new)
+new_m=NULL
+for(i in c(1:64)){
+  d<-cc[i]
+  individual_m<-read_html(d)%>%html_nodes('td td td td a')
+  url=individual_m%>%html_attr('href')
+  url<-gsub(domain,"",url)
+  url=paste0(domain,url)
+  news=data.frame(url=url)
+  new_m<-rbind(new_m,news)
+}
+new_m<-filter(new_m,url!="http://www.i-part.com.tw//unusual/unusual.php?t=7")
+new_m<-unique(new_m)
+all_new<-rbind(new,new_m)
+
+nrow(all_new)
+all_new
+all_new<-all_new[-38,]
+all_new<-as.data.frame(all_new)
+```
+
+
+
+
+
+
+
+final_df=NULL
+
+for(i in c(1:3789)){
+  try=all_new[i,]
+  a=paste0(try)
+  all<-read_html(a)%>%html_nodes('#MotherFrame div div td')%>%html_text()
+  
+  name<-all[which(regexpr("暱.稱",all)>0)]
+  i_name<-substr(name,6,26)
+  
+  
+  
+  gender<-all[which(regexpr("性.別",all)>0)]
+  i_gender<-substr(gender,6,7)
+  
+  age<-all[which(regexpr("年.齡",all)>0)]
+  i_age<-substr(age,6,7)
+  
+  sign<-all[which(regexpr("星.座",all)>0)]
+  i_sign<-substr(sign,6,8)
+  
+  height<-all[which(regexpr("身.高",all)>0)]
+  i_height<-substr(height,6,8)
+  
+  blood<-all[which(regexpr("血.型",all)>0)]
+  en<-regexpr("[A-Z]型",blood)
+  i_blood<-substr(blood,6,en)
+  
+  weight<-all[which(regexpr("體.重",all)>0)]
+  end<-regexpr("kg",weight)
+  i_weight<-substr(weight,6,end-1)
+  
+  occupation<-all[which(regexpr("職.業",all)>0)]
+  i_job<-substr(occupation,6,15)
+  
+  affection<-all[which(regexpr("感.情",all)>0)]
+  start1<-regexpr("感",affection)
+  end1<-regexpr(".$",affection)
+  i_affe<-substr(affection,start1+26,end1-18)
+  
+  
+  
+  
+  
+  view_num<-read_html(a)%>%html_nodes('#remind~ table table+ table div')%>%html_text()
+  view<-view_num[1]
+  start2<-regexpr("瀏",view)
+  end2<-regexpr("[0-9](\\r\\n).*人",view)
+  i_view<-substr(view,start2+6,end2)
+  
+  
+  
+  
+  
+  fun<-read_html(a)%>%html_nodes('div~ div table:nth-child(3) td , table:nth-child(3) font')%>%html_text()
+  fun<-fun[-c(2,4,6,8,10,12,13,14,16,18,20)]
+  
+  city<-fun[which(regexpr("家..鄉",fun)>0)]
+  
+  if(is.na(city[1])==TRUE){
+    next
+  }
+  start3<-regexpr(">",city)
+  i_city<-substr(city,start3+2,start3+4)
+  
+  #income<-fun[which(regexpr("收..入",fun)>0)]
+  #end4<-regexpr("元",income)
+  #if(end4<0){
+  #  i_income<-substr(income,9,10)
+  #}else{i_income<-substr(income,9,end4-1) }
+  
+  smoke<-fun[which(regexpr("抽..煙",fun)>0)]
+  i_smoke<-substr(smoke,9,12)
+  
+  drunk<-fun[which(regexpr("飲..酒",fun)>0)]
+  i_drunk<-substr(drunk,9,15)
+  
+  chara<-fun[which(regexpr("個..性",fun)>0)]
+  start5<-regexpr("\\r\\n",chara)
+  end5<-regexpr("\\w(\\r\\n).*$",chara)
+  i_chara<-substr(chara,start5+3,end5)
+  
+  religion<-fun[which(regexpr("信..仰",fun)>0)]
+  i_re<-substr(religion,9,15)
+  
+  study<-fun[which(regexpr("學..歷",fun)>0)]
+  i_study<-substr(study,9,15)
+  
+  school<-fun[which(regexpr("學..校",fun)>0)]
+  i_school<-substr(school,9,15)
+  
+  
+  
+  
+  
+  
+  friend<-read_html(a)%>%html_nodes('div~ div div~ table+ table td , div~ table font')%>%html_text()
+  
+  friend<-friend[c(19:31)]
+  friend<-friend[c(1,3,5,7,9,11,13)]
+  
+  r_age<-friend[which(regexpr("年齡要求.*歲",friend)>0)]
+  se<-regexpr("~",r_age)
+  se1<-regexpr("歲",r_age)
+  r_age_start<-substr(r_age,9,se-1)
+  r_age_final<-substr(r_age,se+1,se1-1)
+  
+  
+  r_height<-friend[2]
+  se2<-regexpr("cm",r_height)
+  se3<-regexpr("~[0-9]{3}[a-z].*$",r_height)
+  r_height_start<-substr(r_height,9,se2-1)
+  if(se3<0){
+    r_height_end<-substr(r_height,se2+3,se2+3)
+  }else{r_height_end<-substr(r_height,se2+3,se2+5)}
+  
+  r_weight<-friend[3]
+  se4<-regexpr("kg",r_weight)
+  se5<-regexpr("~[0-9]{3}[a-z].*$",r_weight)
+  r_weight_start<-substr(r_weight,9,se4-1)
+  if(se5<0){
+    r_weight_end<-substr(r_weight,se4+3,se4+3)
+  }else{r_weight_end<-substr(r_weight,se4+3,se4+4)}
+  
+  
+  r_study<-friend[4]
+  r_study<-substr(r_study,9,10)
+  
+  r_religion<-friend[5]
+  r_religion<-substr(r_religion,9,11)
+  
+  r_chara<-friend[6]
+  r_chara<-substr(r_chara,9,25)
+  
+  
+  r_rela<-friend[7]
+  r_rela<-substr(r_rela,10,25)
+  
+  
+  
+  
+  
+  
+  
+  fundamental_df<-data.frame(iname=i_name,igender=i_gender,isign=i_sign,iheight=i_height,iweight=i_weight,iblood=i_blood,ijob=i_job,iaffe=i_affe,iview=i_view,icity=i_city,ismoke=i_smoke,idrunk=i_drunk,ichara=i_chara,ireligion=i_re,istudy=i_study,ischool=i_school,r_age_start=r_age_start,r_age_final=r_age_final,r_height_start=r_height_start,r_height_end=r_height_end,r_weight_start=r_weight_start,r_weight_end=r_weight_end,rstudy=r_study,rreligion=r_religion,rchara=r_chara,rrela=r_rela)
+  
+  final_df<-rbind(final_df,fundamental_df)
+  
+  
+}
+nrow(final_df)
+write.csv(final_df,"r_final_project_df.csv")
+getwd()
+
