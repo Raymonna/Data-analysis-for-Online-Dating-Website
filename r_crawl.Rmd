@@ -26,6 +26,8 @@ for(i in c(0:63)){
 ```
 
 #個人網頁抓取
+爬蟲內容:抓取全台最大交友網站"愛情公寓",線上人數共3000多人的基本個資,來自不同領域,不同地區(包含部分港澳與歐美)等等形形色色的男性女性
+
 ```{r}
 new=NULL
 domain = "http://www.i-part.com.tw/"
@@ -63,7 +65,10 @@ all_new<-all_new[-38,]
 all_new<-as.data.frame(all_new)
 ```
 
-
+#individual analysis
+抓取內容:暱稱,性別...伴侶要求...以及人氣指數
+前處理:雜訊清理(利用regular expression)
+表現形式:製作成data frame格式,以csv匯出
 
 
 
