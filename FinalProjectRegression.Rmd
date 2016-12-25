@@ -1,0 +1,119 @@
+---
+title: "r_final_project_regression  陳靖雯 b04303131"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+#資料整理
+##前處理
+(package used:dplyr， plotly ，ggplot2)
+<li>將屬性資料數值化(包含性別,單身與否,抽菸與否,酗酒與否)</li>
+<li>將"工作"一變數做進一步的分析=>以男女分別進行圖像化分析,根據每一個工作類別取平均人氣指數,藉此當作工作受歡迎程度的指標,區分為受歡迎的工作,</li>
+<li>將"居住城市"一變數進行整理,處理雜訊並區分為台灣各縣市以及國外</li>
+
+
+
+
+```{r}
+getwd()
+require(dplyr)
+library(plotly)
+require(ggplot2)
+df<-read.csv("C:/Users/warty/Documents/dsR/data/r_final_project_df.csv")
+
+df<-mutate(df,gender=ifelse(igender%in%"女生",1,0))
+
+
+df<-mutate(df,single=ifelse(iaffe%in%"單身",1,0))
+
+
+b<-df%>%group_by(ijob)%>%mutate(mean_view=mean(iview))%>%ggplot(aes(x=ijob,y=mean_view))+geom_bar(stat="identity",size=9)+facet_wrap(~igender)
+ggplotly(b)
+```
+
+
+```{r}
+df<-mutate(df,sig_job=ifelse(ijob%in%c("行銷","未知","經商","金融保險","交通/運輸","房地產","軍警"),1,0))  
+
+
+df$icity<-gsub("[0-9a-zA-Z]{3}","foreign",df$icity)
+df$icity<-gsub("(<.*>)","",df$icity)
+a<-df%>%group_by(icity)%>%mutate(mean_view=mean(iview))%>%ggplot(aes(x=icity,y=mean_view))+geom_bar(stat="identity",width=.7)+facet_wrap(~igender)
+ggplotly(a)
+
+
+df<-mutate(df,nosmoke=ifelse(ismoke%in%c("討厭人抽","從來不抽"),1,ifelse(ismoke%in%"","",0)))
+
+
+df<-mutate(df,nodrink=ifelse(idrunk%in%c("偶爾小酌","滴酒不沾"),1,ifelse(idrunk%in%c("酒量很好","應酬交際"),0,"")))
+df<-mutate(df,expertdrunk=ifelse(idrunk%in%"行家品酒",1,0))
+df<-mutate(df,saiddrink=ifelse(idrunk%in%"藉酒澆愁",1,0))
+
+ 
+df<-mutate(df,istudy_level=ifelse(istudy%in%"","",ifelse(istudy%in%"國中以下",1,ifelse(istudy%in%"國中",2,ifelse(istudy%in%"高中/職",3,ifelse(istudy%in%"大學/學院",4,ifelse(istudy%in%"碩士",5,6)))))))
+
+df<-mutate(df,ha_re=ifelse(r_age_start==0&r_height_start==0&r_weight_start==0&rstudy%in%c("","不拘","無"),0,1))
+
+#mutate(df,fillchara=ifelse(ichara%in%df$ichara[which(regexpr("不拘.*",df$ichara))],0,1))
+#levels(as.factor(df$ichara))
+```
+#ols regression
+
+##內容摘要
+此次內容分析主要針對影響人氣指數的各種可能因素估計其效果(我將"總體","男性","女性",分別做三次回歸加以分析,而身高體重的部分,以quadratic regression 來進行近一步分析)
+發現:
+<li>總體分析中:</li>
+             身高,體重,是否有寫擇偶條件,以及你的職業類別為"行銷"時,以上因素皆與人氣指數有顯著關聯
+             身高=>身高愈高愈有一定優勢,但此優勢增加幅度卻為遞減,可見身高還是適中為宜
+             體重=>體重則是越輕越好,可見現代人追求骨感的熱潮依舊不減
+             擇偶條件有寫與否=>在此,並不是說若有寫擇偶條件,你的人氣就會上升,其中較有可能的因果關希為"一個人氣高的人,可能比較傲嬌,所以會寫上交往對象的條件"
+             抽菸與喝酒與否=>大家對於喝酒方面似乎容忍度比抽菸還高,可見在一般人克版印象中,抽菸對人第一印象的傷害大於酗酒
+             職業=>對於行銷業,大家似乎會有比較好的觀感,另一方面的可能為,行銷業的人通常比較會打扮,理所當然有比較高的人氣(selection bias)
+<li>男性分析中:</li>
+             身高體重=>均無顯著關系
+             學歷=>若有碩士學歷,有顯著加分效果
+             職業=>行銷依舊有顯著效果,值得注意的是,倘若你是學生,待業中,法律相關職務,有可能遽減分效果,而教育經商則具有加分效果
+             居住地=>無影響
+<li>女性分析中:</li>
+             體重身高=>相對於男性,較有顯著的影響,而其中的效果特性,近似於總體分析中
+             學歷=>相對於男性,女性學歷似乎對人氣沒有實質幫助,而且較具影響力的碩士學歷呈現現的是負向效果,可推測女子無才便是德此一觀念仍留存在現代人的潛意識中
+             單身與否=>若是單身,對人氣指數有加分效果
+             職業=>一樣,行銷業具顯著效果,但值得注意的是,若選填為學生,對於人氣指相對負向關係
+             居住地=>若居住地為新竹縣,台東縣,彰化縣,嘉義縣,有顯著正向效果,其中有可能的原因為大家對這些地區的女生普遍有好感,或是在比例上,這些地區的女生比較漂亮?!(有可能樣本比較少的緣故)
+             
+             
+
+
+
+```{r}
+
+require(quantreg)
+
+
+
+df$iheight<-gsub("未知","",df$iheight)
+df$iheight<-as.numeric(df$iheight)
+df$istudy_level<-as.numeric(df$istudy_level)
+df$nosmoke<-as.numeric(df$nosmoke)
+df$nodrink<-as.numeric(df$nodrink)
+df_girl<-filter(df,gender==1)
+df_boy<-filter(df,gender==0)
+
+summary(lm(iview~gender+iheight+iweight+single+sig_job+nosmoke+expertdrunk+saiddrink+nodrink+istudy_level+ha_re,df))
+summary(lm(iview~polym(iheight,degree=2,raw=TRUE)+polym(iweight,degree=2,raw=TRUE)+single+sig_job+factor(ijob)+factor(istudy)+factor(icity)+nosmoke+expertdrunk+saiddrink+nodrink+istudy_level+ha_re,df_girl))
+
+summary(lm(iview~polym(iheight,degree = 2,raw=TRUE)+polym(iweight,degree=2,raw=TRUE)+single+sig_job+factor(ijob)+factor(istudy)+factor(icity)+nosmoke+expertdrunk+saiddrink+nodrink+istudy_level+ha_re,df_boy))
+
+library(plm)
+citylm<-plm(iview~polym(iheight,degree=2,raw=TRUE)+polym(iweight,degree=2,raw=TRUE)+single+sig_job+factor(ijob)+nosmoke+factor(istudy)+expertdrunk+saiddrink+nodrink+istudy_level+ha_re+factor(icity),data=df,model="pooling")
+summary(citylm)
+summary(lm(iview~iheight+iweight+single+sig_job+nosmoke+expertdrunk+saiddrink+nodrink+istudy_level+ha_re,df))
+```
+
+#quantile regression
+```{r}
+rq(iview~iweight+single+sig_job+nosmoke+ha_re,data=df_girl,tau=0.75)
+rq(iview~iheight+iweight+single+sig_job+nosmoke+istudy_level+ha_re,data=df_boy,tau=0.75)
+
+```
