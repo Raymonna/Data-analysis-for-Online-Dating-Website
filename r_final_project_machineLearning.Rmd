@@ -1,0 +1,45 @@
+---
+title: "R_final_project_machineLearning"
+output: html_notebook
+
+---
+
+
+
+```{r}
+df<-read.csv("C:/Users/warty/Documents/dsR/data/r_final_project_df.csv")
+library(rpart)
+
+
+df_girl<-filter(df,gender==1)
+df_girl<-mutate(df_girl,popular=ifelse(iview>=8524,1,0))
+
+model <- rpart( popular~factor(icity)+factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_girl, method="class")
+summary(model)
+library(rpart.plot)
+library(rattle)
+fancyRpartPlot(model,main="Rain Tomorrow",sub="in-class exercise")
+??fancyRpartPlot
+
+
+
+
+fit <- rpart(popular ~ iheight+iweight+single+nosmoke+istudy_level+ha_re,
+  	method="class", data=df_girl)
+printcp(fit) # display the results 
+plotcp(fit) # visualize cross-validation results 
+summary(fit) # detailed summary of splits
+
+# plot tree 
+plot(fit, uniform=TRUE, 
+  	main="Classification Tree for Popular")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+
+# create attractive postscript plot of tree 
+post(fit, file = "c:/tree.ps", 
+  	title = "Classification Tree for Kyphosis")
+
+
+```
+
+
