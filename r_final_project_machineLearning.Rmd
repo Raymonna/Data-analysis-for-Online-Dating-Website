@@ -1,9 +1,19 @@
 ---
 title: "R_final_project_machineLearning"
 output: html_notebook
-
+html_document:
+    toc: true
+    toc_float: true
 ---
+#decision tree(boy & girl)
+##實驗方法
+以decision tree 決定此個體是否屬於受歡迎的一方,由boxplot發現男性,女性在前25%的人氣指數分別高於2012與8524,所以我以此分別做為男女方是否受歡迎的界線,而模型中變數的選擇,我選取於regression中相對具顯著效果的變數
+##實驗結果
+經由圖示,我們可以清楚發現"職業"不論對女性或男性在人氣指數方面都有相當的關聯性,然而,比較不同的是,女性部分,人氣指數似乎具有地緣效果,而男性在體重變數則具一定影響力(受歡迎的一方,體重大多落在68-80間)
 ```{r}
+library(dplyr)
+library(ggplot2)
+df<-read.csv("C:/Users/warty/Documents/dsR/data/r_final_project_df.csv")
 df<-mutate(df,gender=ifelse(igender%in%"女生",1,0))
 df<-mutate(df,single=ifelse(iaffe%in%"單身",1,0))
 df<-mutate(df,sig_job=ifelse(ijob%in%c("行銷","未知","經商","金融保險","交通/運輸","房地產","軍警"),1,0))  
@@ -12,7 +22,7 @@ df<-mutate(df,sig_job=ifelse(ijob%in%c("行銷","未知","經商","金融保險"
 df$icity<-gsub("[0-9a-zA-Z]{3}","foreign",df$icity)
 df$icity<-gsub("(<.*>)","",df$icity)
 a<-df%>%group_by(icity)%>%mutate(mean_view=mean(iview))%>%ggplot(aes(x=icity,y=mean_view))+geom_bar(stat="identity",width=.7)+facet_wrap(~igender)
-ggplotly(a)
+
 
 
 df<-mutate(df,nosmoke=ifelse(ismoke%in%c("討厭人抽","從來不抽"),1,ifelse(ismoke%in%"","",0)))
@@ -40,7 +50,7 @@ df_boy<-filter(df,gender==0)
 
 ```
 ```{r}
-df<-read.csv("C:/Users/warty/Documents/dsR/data/r_final_project_df.csv")
+
 library(rpart)
 library(rpart.plot)
 library(rattle)
@@ -51,39 +61,42 @@ df_boy<-mutate(df_boy,popular=ifelse(iview>=2012,1,0))
 model <- rpart( popular~factor(icity)+factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_girl, method="class")
 summary(model)
 model2 <- rpart( popular~factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_boy, method="class")
-fancyRpartPlot(model,main="Rain Tomorrow",sub="in-class exercise")
-fancyRpartPlot(model2,main="Rain Tomorrow",sub="in-class exercise")
+fancyRpartPlot(model,main="GIRLs' decision tree",sub="popular or not")
+fancyRpartPlot(model2,main="BOYs' decision tree",sub="popular or not")
 
 
 
 
-fit <- rpart(popular ~ iheight+iweight+single+nosmoke+istudy_level+ha_re,
-  	method="class", data=df_girl)
-printcp(fit) # display the results 
-plotcp(fit) # visualize cross-validation results 
-summary(fit) # detailed summary of splits
-
-# plot tree 
-plot(fit, uniform=TRUE, 
-  	main="Classification Tree for Popular")
-text(fit, use.n=TRUE, all=TRUE, cex=.8)
-
-# create attractive postscript plot of tree 
-post(fit, file = "c:/tree.ps", 
-  	title = "Classification Tree for Kyphosis")
+# fit <- rpart(popular ~ iheight+iweight+single+nosmoke+istudy_level+ha_re,
+#   	method="class", data=df_girl)
+# printcp(fit) # display the results 
+# plotcp(fit) # visualize cross-validation results 
+# summary(fit) # detailed summary of splits
+# 
+# # plot tree 
+# plot(fit, uniform=TRUE, 
+#   	main="Classification Tree for Popular")
+# text(fit, use.n=TRUE, all=TRUE, cex=.8)
+# 
+# # create attractive postscript plot of tree 
+# post(fit, file = "c:/tree.ps", 
+#   	title = "Classification Tree for Kyphosis")
 
 
 ```
-
+#decision tree + kmeans clustering
+##實驗方法
+藉由kmeans clustering 分類出高人氣與低人氣,再以decision tree 進行特徵分析,有別於上方,我將所有變數納入模型
+##實驗結果
+在男性的部分,kmeans+decision tree 所得的結果不勝理想(其原因可能為有太多離群值),故在此不予討論
+<hi>而對於女性部分,我們得出另一個結果(在此我把居住城市變數拿掉,使圖形呈現較為簡潔),其中縣市同樣也是一個有相對效果的因子,另外,女性似乎在年齡上的要求也有影響,若你要求年齡在24歲以上,有基督教信仰,星座為天蠍金牛獅子等,有較大可能性屬於人氣高的一方
 
 ```{r}
-library(ggplot2)
-library(rpart)
-library(rattle)
+
 library(rpart.plot)
 library(RColorBrewer)
 library(caret)
-View(df_boy)
+
 set.seed(123)
 #Generate movie clusters and plot
 mydataCluster <- kmeans(na.omit(df_boy[,10]), 2, nstart = 20)
@@ -95,8 +108,8 @@ train_ind <- sample(seq_len(nrow(df_boy)), size = training_size)
 training <- df_boy[train_ind, ]
 testing <- df_boy[-train_ind, ]
 #Construct decision tree
-fit <- rpart(cluster ~isign+iweight+iheight+ijob+iaffe+icity+ismoke+idrunk+ireligion+istudy+ischool+r_age_start+r_height_start+r_weight_end+rstudy+rchara+ha_re,method="class",data=training)
-fancyRpartPlot(fit)
+fit_boy <- rpart(cluster ~isign+iweight+iheight+ijob+iaffe+icity+ismoke+idrunk+ichara+ireligion+istudy+ischool+r_age_start+r_height_start+r_weight_end+rstudy+rchara+ha_re,method="class",data=training)
+fancyRpartPlot(fit_boy)
 ```
 
 ```{r}
@@ -111,8 +124,8 @@ train_ind <- sample(seq_len(nrow(df_girl)), size = training_size)
 training <- df_girl[train_ind, ]
 testing <- df_girl[-train_ind, ]
 #Construct decision tree
-fit <- rpart(cluster ~isign+iweight+iheight+ismoke+idrunk+ireligion+istudy+ischool+r_age_start+r_height_start+r_weight_end+rstudy+ha_re,method="class",data=training)
-fancyRpartPlot(fit)
+fit_girl <- rpart(cluster ~isign+iweight+iheight+ijob+iaffe+ismoke+idrunk+ireligion+istudy+ischool+r_age_start+r_height_start+rstudy+ha_re,method="class",data=training)
+fancyRpartPlot(fit_girl)
 ```
 
 
