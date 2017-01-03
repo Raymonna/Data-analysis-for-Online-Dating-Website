@@ -57,6 +57,10 @@ df<-mutate(df,ha_re=ifelse(r_age_start==0&r_height_start==0&r_weight_start==0&rs
 
 #mutate(df,fillchara=ifelse(ichara%in%df$ichara[which(regexpr("不拘.*",df$ichara))],0,1))
 #levels(as.factor(df$ichara))
+
+
+test<-ggplot(df,aes(x=igender,y=iview))+geom_boxplot()
+ggplotly(test)
 ```
 #ols regression
 
