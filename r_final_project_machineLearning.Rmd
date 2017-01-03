@@ -1,9 +1,11 @@
 ---
-title: "R_final_project_machineLearning"
-output: html_notebook
 html_document:
-    toc: true
-    toc_float: true
+  toc: yes
+  toc_float: yes
+output:
+  html_document: default
+  html_notebook: default
+title: "R_final_project_machineLearning"
 ---
 #decision tree(boy & girl)
 ##實驗方法
@@ -49,6 +51,7 @@ df_boy<-filter(df,gender==0)
 
 
 ```
+
 ```{r}
 
 library(rpart)
@@ -61,8 +64,14 @@ df_boy<-mutate(df_boy,popular=ifelse(iview>=2012,1,0))
 model <- rpart( popular~factor(icity)+factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_girl, method="class")
 summary(model)
 model2 <- rpart( popular~factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_boy, method="class")
+<<<<<<< HEAD
 fancyRpartPlot(model,main="GIRLs' decision tree",sub="popular or not")
 fancyRpartPlot(model2,main="BOYs' decision tree",sub="popular or not")
+=======
+fancyRpartPlot(model,main="popular or not",sub="girl's decision tree")
+fancyRpartPlot(model2,main="popular or not",sub="boy's decision tree")
+
+>>>>>>> origin/master
 
 
 
