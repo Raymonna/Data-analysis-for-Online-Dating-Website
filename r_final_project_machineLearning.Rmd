@@ -51,8 +51,8 @@ df_boy<-mutate(df_boy,popular=ifelse(iview>=2012,1,0))
 model <- rpart( popular~factor(icity)+factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_girl, method="class")
 summary(model)
 model2 <- rpart( popular~factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_boy, method="class")
-fancyRpartPlot(model,main="Rain Tomorrow",sub="in-class exercise")
-fancyRpartPlot(model2,main="Rain Tomorrow",sub="in-class exercise")
+fancyRpartPlot(model,main="popular or not",sub="girl's decision tree")
+fancyRpartPlot(model2,main="popular or not",sub="boy's decision tree")
 
 
 
