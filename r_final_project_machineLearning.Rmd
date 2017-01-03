@@ -3,23 +3,56 @@ title: "R_final_project_machineLearning"
 output: html_notebook
 
 ---
+```{r}
+df<-mutate(df,gender=ifelse(igender%in%"女生",1,0))
+df<-mutate(df,single=ifelse(iaffe%in%"單身",1,0))
+df<-mutate(df,sig_job=ifelse(ijob%in%c("行銷","未知","經商","金融保險","交通/運輸","房地產","軍警"),1,0))  
+
+
+df$icity<-gsub("[0-9a-zA-Z]{3}","foreign",df$icity)
+df$icity<-gsub("(<.*>)","",df$icity)
+a<-df%>%group_by(icity)%>%mutate(mean_view=mean(iview))%>%ggplot(aes(x=icity,y=mean_view))+geom_bar(stat="identity",width=.7)+facet_wrap(~igender)
+ggplotly(a)
+
+
+df<-mutate(df,nosmoke=ifelse(ismoke%in%c("討厭人抽","從來不抽"),1,ifelse(ismoke%in%"","",0)))
+
+
+df<-mutate(df,nodrink=ifelse(idrunk%in%c("偶爾小酌","滴酒不沾"),1,ifelse(idrunk%in%c("酒量很好","應酬交際"),0,"")))
+df<-mutate(df,expertdrunk=ifelse(idrunk%in%"行家品酒",1,0))
+df<-mutate(df,saiddrink=ifelse(idrunk%in%"藉酒澆愁",1,0))
+
+ 
+df<-mutate(df,istudy_level=ifelse(istudy%in%"","",ifelse(istudy%in%"國中以下",1,ifelse(istudy%in%"國中",2,ifelse(istudy%in%"高中/職",3,ifelse(istudy%in%"大學/學院",4,ifelse(istudy%in%"碩士",5,6)))))))
+
+df<-mutate(df,ha_re=ifelse(r_age_start==0&r_height_start==0&r_weight_start==0&rstudy%in%c("","不拘","無"),0,1))
+
+df$iheight<-gsub("未知","",df$iheight)
+df$iheight<-as.numeric(df$iheight)
+df$istudy_level<-as.numeric(df$istudy_level)
+df$nosmoke<-as.numeric(df$nosmoke)
+df$nodrink<-as.numeric(df$nodrink)
+df_girl<-filter(df,gender==1)
+df_boy<-filter(df,gender==0)
 
 
 
+
+```
 ```{r}
 df<-read.csv("C:/Users/warty/Documents/dsR/data/r_final_project_df.csv")
 library(rpart)
-
-
-df_girl<-filter(df,gender==1)
-df_girl<-mutate(df_girl,popular=ifelse(iview>=8524,1,0))
-
-model <- rpart( popular~factor(icity)+factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_girl, method="class")
-summary(model)
 library(rpart.plot)
 library(rattle)
+
+
+df_girl<-mutate(df_girl,popular=ifelse(iview>=8524,1,0))
+df_boy<-mutate(df_boy,popular=ifelse(iview>=2012,1,0))
+model <- rpart( popular~factor(icity)+factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_girl, method="class")
+summary(model)
+model2 <- rpart( popular~factor(ijob)+iweight+single+sig_job+nosmoke+istudy_level+ha_re, data=df_boy, method="class")
 fancyRpartPlot(model,main="Rain Tomorrow",sub="in-class exercise")
-??fancyRpartPlot
+fancyRpartPlot(model2,main="Rain Tomorrow",sub="in-class exercise")
 
 
 
@@ -41,5 +74,49 @@ post(fit, file = "c:/tree.ps",
 
 
 ```
+
+
+```{r}
+library(ggplot2)
+library(rpart)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+library(caret)
+View(df_boy)
+set.seed(123)
+#Generate movie clusters and plot
+mydataCluster <- kmeans(na.omit(df_boy[,10]), 2, nstart = 20)
+df_boy$cluster[which(!is.na(df_boy$iview))] <- mydataCluster$cluster
+plot(df_boy$iview, bg=df_boy$cluster, pch=21)
+
+training_size <- floor(0.80 * nrow(df_boy))
+train_ind <- sample(seq_len(nrow(df_boy)), size = training_size)
+training <- df_boy[train_ind, ]
+testing <- df_boy[-train_ind, ]
+#Construct decision tree
+fit <- rpart(cluster ~isign+iweight+iheight+ijob+iaffe+icity+ismoke+idrunk+ireligion+istudy+ischool+r_age_start+r_height_start+r_weight_end+rstudy+rchara+ha_re,method="class",data=training)
+fancyRpartPlot(fit)
+```
+
+```{r}
+
+
+mydataCluster <- kmeans(na.omit(df_girl[,10]), 2, nstart = 20)
+df_girl$cluster[which(!is.na(df_girl$iview))] <- mydataCluster$cluster
+plot(df_girl$iview, bg=df_girl$cluster, pch=21)
+
+training_size <- floor(0.80 * nrow(df_girl))
+train_ind <- sample(seq_len(nrow(df_girl)), size = training_size)
+training <- df_girl[train_ind, ]
+testing <- df_girl[-train_ind, ]
+#Construct decision tree
+fit <- rpart(cluster ~isign+iweight+iheight+ismoke+idrunk+ireligion+istudy+ischool+r_age_start+r_height_start+r_weight_end+rstudy+ha_re,method="class",data=training)
+fancyRpartPlot(fit)
+```
+
+
+
+
 
 
